@@ -1,62 +1,72 @@
-from flask import Flask, render_template
-from flask import request, redirect, url_for
-from werkzeug.utils import secure_filename
-import os, re, joblib
+from flask import Flask, request, session
+from flask import render_template, redirect, url_for
+import os
+import pickle
 import docx
-from pdfminer.high_level import extract_text
-from sklearn.feature_extraction.text import TfidfVectorizer
+import PyPDF2
+import re
+from werkzeug.utils import secure_filename
 
-
-
+# Khởi tạo ứng dụng Flask
 app = Flask(__name__)
+
+# Thư mục lưu file tải lên
 UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.secret_key = "4conruoi" 
 
-knn_model_path = "models/resume_screening_model.pkl"
-knn_model = joblib.load(knn_model_path)
+# Load mô hình và vectorizer
+svc_model = pickle.load(open("models/clf.pkl", "rb"))
+tfidf = pickle.load(open("models/tfidf.pkl", "rb"))
+le = pickle.load(open("models/encoder.pkl", "rb"))
 
+# Hàm làm sạch văn bản
+def clean_resume(txt):
+    clean_text = re.sub(r"http\S+\s", " ", txt)
+    clean_text = re.sub(r"RT|cc", " ", clean_text)
+    clean_text = re.sub(r"#\S+\s", " ", clean_text)
+    clean_text = re.sub(r"@\S+", " ", clean_text)
+    clean_text = re.sub(r"[^\w\s]", " ", clean_text)  # Loại bỏ ký tự đặc biệt
+    clean_text = re.sub(r"\s+", " ", clean_text)
+    return clean_text.strip()
 
-def cleanResume(txt):
-    cleanText = re.sub('http\S+\s', ' ', txt)
-    cleanText = re.sub('RT|cc', ' ', cleanText)
-    cleanText = re.sub('#\S+\s', ' ', cleanText)
-    cleanText = re.sub('@\S+', '  ', cleanText)
-    cleanText = re.sub('[%s]' % re.escape("""!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""), ' ', cleanText)
-    cleanText = re.sub(r'[^\x00-\x7f]', ' ', cleanText)
-    cleanText = re.sub('\s+', ' ', cleanText)
-    return cleanText.strip()
-
+# Hàm trích xuất văn bản từ file
 def extract_text_from_file(file_path):
-    if file_path.endswith(".pdf"):
-        return extract_text(file_path)
-    elif file_path.endswith(".docx") or file_path.endswith(".doc"):
+    file_ext = file_path.split(".")[-1].lower()
+    
+    if file_ext == "pdf":
+        with open(file_path, "rb") as f:
+            reader = PyPDF2.PdfReader(f)
+            text = " ".join([page.extract_text() for page in reader.pages if page.extract_text()])
+    
+    elif file_ext == "docx":
         doc = docx.Document(file_path)
-        return "\n".join([para.text for para in doc.paragraphs])
-    elif file_path.endswith(".txt"):
+        text = " ".join([para.text for para in doc.paragraphs])
+    
+    elif file_ext == "txt":
         with open(file_path, "r", encoding="utf-8") as f:
-            return f.read()
+            text = f.read()
+    
     else:
-        raise ValueError("Unsupported file format")
+        raise ValueError("Unsupported file type. Please upload PDF, DOCX, or TXT.")
+    
+    return text
 
-def preprocess_resume(file_path, tfidf_model_path):
-    # Load TF-IDF vectorizer
-    tfidf = joblib.load(tfidf_model_path)
-    
-    # Extract text from file
-    raw_text = extract_text_from_file(file_path)
-    
-    # Clean the text
-    cleaned_text = cleanResume(raw_text)
-    
-    # Convert text to feature vector
+# Hàm dự đoán vị trí công việc phù hợp
+def predict_category(resume_text):
+    cleaned_text = clean_resume(resume_text)
     vectorized_text = tfidf.transform([cleaned_text]).toarray()
-    
-    return vectorized_text
+    prediction = svc_model.predict(vectorized_text)
+    predicted_category = le.inverse_transform(prediction)
+    return predicted_category[0]
 
+# Route trang chính
 @app.route("/")
 def index():
     return render_template("index.html")
 
+# Route xử lý upload file
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
     if request.method == "POST":
@@ -72,24 +82,22 @@ def upload():
             file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
             file.save(file_path)
 
-            # Xử lý CV và dự đoán
+            # Xử lý file và dự đoán
             try:
-                vectorized_resume = preprocess_resume(file_path, "models/resume_screening_model.pkl")
-                prediction = knn_model.predict(vectorized_resume)
-                result = f"Dự đoán: {prediction[0]}"
-                print(result)
+                resume_text = extract_text_from_file(file_path)  # Hàm trích xuất văn bản từ file
+                predicted_job = predict_category(resume_text)  # Hàm dự đoán công việc
+                session["result"] = f"{predicted_job}"
             except Exception as e:
-                result = f"Lỗi: {str(e)}"
+                session["result"] = f"Lỗi: {str(e)}"
 
-            # Chuyển hướng đến trang kết quả
-            return redirect(url_for("results", result=result, filename=filename))
+            return redirect(url_for("results"))  # Điều hướng đến trang kết quả
 
     return render_template("upload.html")
 
-
 @app.route("/results")
 def results():
-    return render_template("results.html")
+    result = session.get("result", "Không có kết quả nào.")
+    return render_template("results.html", result=result)
 
 if __name__ == "__main__":
     app.run(debug=True)

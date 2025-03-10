@@ -4,3 +4,4 @@ python-docx==1.1.2
 pdfminer
 pdfminer.six
 scikit-learn==1.6.1
+PyPDF2==3.0.1
