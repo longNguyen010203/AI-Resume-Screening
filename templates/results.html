@@ -1,12 +1,27 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+    <meta charset="UTF-8">
     <title>Kết quả sàng lọc</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <img src="{{ url_for('static', filename='undraw_hiring_8szx.png') }}" alt="Logo" class="logo1">
-    <h1>Kết quả sàng lọc CV</h1>
-    <p>CV của bạn đã được xử lý!</p>
+    <div class="container text-center mt-5">
+        <img src="{{ url_for('static', filename='undraw_hiring_8szx.png') }}" alt="Logo" class="logo1">
+        <h1>Vị trí phù hợp cho bạn</h1>
+        
+        {% if result %}
+            <p class="result-text">Dựa trên CV của bạn, chúng tôi đề xuất vị trí:</p>
+            <h2 class="job-title">{{ result }}</h2>
+        {% else %}
+            <p class="error-text">⚠ Không thể xác định vị trí công việc. Hãy thử lại với một CV khác.</p>
+        {% endif %}
+
+        <br>
+        <br>
+
+
+        <a href="{{ url_for('upload') }}" class="btn btn-primary mt-4 btn-lg">Back</a>
+    </div>
 </body>
 </html>
