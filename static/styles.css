@@ -1,0 +1,74 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 50px;
+}
+h1 {
+    color: #333;
+}
+button {
+    background: linear-gradient(to right, #ff7e5f, #feb47b);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+button:hover {
+    background: linear-gradient(to right, #ff6a5f, #fd9068);
+}
+
+.logo {
+    width: 650px; /* Điều chỉnh kích thước logo */
+    height: auto;
+}
+
+.logo2 {
+    width: 450px; /* Điều chỉnh kích thước logo */
+    height: auto;
+}
+
+.logo1 {
+    width: 450px; /* Điều chỉnh kích thước logo */
+    height: auto;
+}
+
+.btn-lg {
+    padding: 15px 40px;
+    font-size: 1.2rem;
+}
+
+canvas {
+    background-color: white;
+    border: 2px solid #000;
+    cursor: crosshair;
+}
+
+.btn-spacing {
+    margin-right: 15px; /* Tạo khoảng cách bên phải */
+}
+
+.button-group {
+    display: flex;
+    gap: 20px; /* Tạo khoảng cách 20px giữa các nút */
+    justify-content: center; /* Căn giữa */
+}
+
+.btn-primary {
+    background-color: #fbb28b;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+}
+.btn-danger:hover {
+    background-color: #b02a37;
+}
