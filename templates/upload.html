@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Upload Resume</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <br>
+    <br>
+    <br>
+    <img src="{{ url_for('static', filename='cth3.jpeg') }}" alt="Logo" class="logo1">
+    <br>
+    <br>
+    <br>
+    <img src="{{ url_for('static', filename='undraw_resume-folder_hf4p.png') }}" alt="Logo" class="logo1">
+    <br>
+    <br>
+    <h1>Upload your CV</h1>
+    <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" required>
+
+
+        <button type="submit">Tải lên</button>
+    </form>
+    <p class="note">Chỉ chấp nhận file .pdf, .doc, .docx, .txt (tối đa 5MB)</p>
+</body>
+</html>
